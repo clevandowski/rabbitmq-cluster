@@ -1,0 +1,47 @@
+sudo docker run -it --rm -e RABBITMQ_ERLANG_COOKIE='CoinCoinCoinCoin' -e RABBITMQ_NODENAME=rabbit@my-rabbitmq rabbitmq:3.6.10 /bin/bash
+
+==> Nécessite d'ajouter dans le /etc/hosts du container le temps de trouver comment claque un dns correctement :
+172.17.0.1  my-rabbitmq
+
+
+cyrille@cyrille-XPS-15-9560:~/Documents/docker/vagrant-ansible-poc/vagrant-experimental-swarm/rabbitmqclient/broker/broker/server$
+sudo docker build -t lil-rabbitmq .
+
+cyrille@cyrille-XPS-15-9560:~/Documents/docker/vagrant-ansible-poc/vagrant-experimental-swarm/rabbitmqclient/broker/broker/server$
+sudo docker run -p 5672:5672 -p 15672:15672 --name lil-rabbitmq lil-rabbitmq
+
+              RabbitMQ 3.4.0. Copyright (C) 2007-2014 GoPivotal, Inc.
+  ##  ##      Licensed under the MPL.  See http://www.rabbitmq.com/
+  ##  ##
+  ##########  Logs: /var/log/rabbitmq/rabbit@3756702cfcdc.log
+  ######  ##        /var/log/rabbitmq/rabbit@3756702cfcdc-sasl.log
+  ##########
+              Starting broker... completed with 12 plugins.
+
+
+
+Dans la console d'admin
+- http://localhost:15672/#/exchanges
+  ==> Créer un exchange (dans l'exemple: cyrille)
+- http://localhost:15672/#/queues
+  ==> Créer une queue (dans l'exemple: toto), la binder sur l'exchange (dans l'exemple: exchange="cyrille", routingKey="toto", arguments="")
+
+
+# Empilage
+while true; do curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9 _\-' | fold -w 32 | head -n 1)" 'http://localhost:8080/send?exchange=cyrille&routingKey=toto&number=1&frequency=10&persistent=true'; sleep .1; done
+
+
+# Dépilage
+while [ $? == 0 ]; do curl -X GET --header 'Accept: application/json' 'http://localhost:8080/receive?queueName=toto&autoAcknowledge=true&multiple=true&transactions=true'; sleep 0.1; done
+
+
+
+
+# Empilage
+while true; do curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d "$(cat /dev/urandom | tr -dc 'a-zA-Z0-9 _\-' | fold -w 32 | head -n 1)" 'http://localhost:8080/send?exchange=test-exchange&routingKey=test-binding&number=1&frequency=10&persistent=true'; sleep .1; done
+
+
+# Dépilage
+while [ $? == 0 ]; do curl -X GET --header 'Accept: application/json' 'http://localhost:8080/receive?queueName=test-queue&autoAcknowledge=true&multiple=true&transactions=true'; sleep 0.1; done
+
+

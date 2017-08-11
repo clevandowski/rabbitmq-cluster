@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  consul:
+    image: consul
+    container_name: consul
+    ports:
+      - "8500:8500"
+
+  rabbitmqx:
+    image: clevandowski/rabbitmq-autocluster:3.6.10
+    hostname: "{{.Node.ID}}-{{.Service.Name}}"
+    container_name: "{{.Node.ID}}-{{.Service.Name}}"
+    environment:
+      AUTOCLUSTER_TYPE: consul
+      CONSUL_HOST: consul
+      CONSUL_PORT: 8500
+      CONSUL_SERVICE_TTL: 60
+      AUTOCLUSTER_CLEANUP: 'true'
+      CLEANUP_WARN_ONLY: 'false'
+      CONSUL_SVC_ADDR_AUTO: 'true'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    deploy:
+      replicas: 3
